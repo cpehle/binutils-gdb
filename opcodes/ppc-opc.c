@@ -874,8 +874,28 @@ const struct powerpc_operand powerpc_operands[] =
 #define ERAT_T UIM + 1
   { 0x7, 21, NULL, NULL, 0 },
 
-#define IH ERAT_T + 1
-  { 0x7, 21, NULL, NULL, PPC_OPERAND_OPTIONAL },
+  /* s2pp: RT field of FXV form instructions. */
+#define FXVRT ERAT_T + 1
+  { 0x1f, 21, NULL, NULL, PPC_OPERAND_FXV_REG },
+
+  /* s2pp: RA field of FXV form instructions. */
+#define FXVRA FXVRT + 1
+  { 0x1f, 16, NULL, NULL, PPC_OPERAND_FXV_REG },
+
+  /* s2pp: RB field of FXV form instructions. */
+#define FXVRB FXVRA + 1
+  { 0x1f, 11, NULL, NULL, PPC_OPERAND_FXV_REG },
+
+  /* s2pp: COND field in FXV form instructions. */
+#define FXVCOND FXVRB + 1
+  { 0x3, 0, NULL, NULL, PPC_OPERAND_OPTIONAL },
+
+#define FXVSH HTM_SI
+/* #define FXVSH FXVCOND + 1                      */
+/*   { 0x1f, 11, NULL, NULL, PPC_OPERAND_SIGNED } */
+
+#define IH HTM_SI + 1
+  { 0x7, 21, NULL, NULL, PPC_OPERAND_OPTIONAL }
 };
 
 const unsigned int num_powerpc_operands = (sizeof (powerpc_operands)
@@ -2655,6 +2675,16 @@ extract_vleil (unsigned long insn,
 /* The mask for a G form instruction. rc not supported at present.  */
 #define XW_MASK XW (0x3f, 0x3f, 0)
 
+/* s2pp: An FXV form instruction. */
+#define FXV(op, xop) (OP (op) | (((unsigned long)(xop) & 0x1ff) << 2))
+#define FXV_MASK FXV (0x3f, 0x1ff)
+
+/* s2pp: Conditional codes for FXV form instructions. */
+#define FXV_COND_NULL (0x0)
+#define FXV_COND_GT (0x1)
+#define FXV_COND_LT (0x2)
+#define FXV_COND_EQ (0x3)
+
 /* An APU form instruction.  */
 #define APU(op, xop, rc) (OP (op) | (((unsigned long)(xop)) & 0x3ff) << 1 | ((rc) & 1))
 
@@ -2783,6 +2813,7 @@ extract_vleil (unsigned long insn,
 #define E6500	PPC_OPCODE_E6500
 #define PPCVLE  PPC_OPCODE_VLE
 #define PPCHTM  PPC_OPCODE_HTM
+#define PPCS2PP PPC_OPCODE_S2PP
 /* The list of embedded processors that use the embedded operand ordering
    for the 3 operand dcbt and dcbtst instructions.  */
 #define DCBT_EO	(PPC_OPCODE_E500 | PPC_OPCODE_E500MC | PPC_OPCODE_476 \
@@ -3111,6 +3142,63 @@ const struct powerpc_opcode powerpc_opcodes[] = {
 {"evfsctsi",	VX (4, 661),	VX_MASK,     PPCSPE|PPCVLE, PPCNONE,	{RS, RB}},
 {"evfsctuf",	VX (4, 662),	VX_MASK,     PPCSPE|PPCVLE, PPCNONE,	{RS, RB}},
 {"evfsctsf",	VX (4, 663),	VX_MASK,     PPCSPE|PPCVLE, PPCNONE,	{RS, RB}},
+
+/* s2pp instructions */
+{"fxvmahm",        FXV(4,  12),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvmabm",        FXV(4,  13),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvmtach",       FXV(4,  15),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVCOND                }},
+{"fxvmahfs",       FXV(4,  28),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvmabfs",       FXV(4,  29),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvmtacbf",      FXV(4,  30),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVCOND                }},
+{"fxvmtachf",      FXV(4,  31),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVCOND                }},
+{"fxvmatachm",     FXV(4,  44),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVRB,  FXVCOND        }},
+{"fxvmatacbm",     FXV(4,  45),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVRB,  FXVCOND        }},
+{"fxvmatachfs",    FXV(4,  60),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVRB,  FXVCOND        }},
+{"fxvmatacbfs",    FXV(4,  61),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVRB,  FXVCOND        }},
+{"fxvmulhm",       FXV(4,  76),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvmulbm",       FXV(4,  77),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvmulhfs",      FXV(4,  92),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvmulbfs",      FXV(4,  93),  FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvmultachm",    FXV(4,  108), FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVRB,  FXVCOND        }},
+{"fxvmultacbm",    FXV(4,  109), FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVRB,  FXVCOND        }},
+{"fxvmultachfs",   FXV(4,  124), FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVRB,  FXVCOND        }},
+{"fxvmultacbfs",   FXV(4,  125), FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVRB,  FXVCOND        }},
+{"fxvinx",         FXV(4,  236), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, RA0,    RB,     FXVCOND}},
+{"fxvpckbu",       FXV(4,  239), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, RA,     RB,     FXVCOND}},
+{"fxvoutx",        FXV(4,  252), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, RA0,    RB,     FXVCOND}},
+{"fxvpckbl",       FXV(4,  255), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, RA,     RB,     FXVCOND}},
+{"fxvsplath",      FXV(4,  268), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, RA                     }},
+{"fxvsplatb",      FXV(4,  269), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, RA                     }},
+{"fxvupckbr",      FXV(4,  271), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, RA,     RB,     FXVCOND}},
+{"fxvupckbl",      FXV(4,  287), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, RA,     RB,     FXVCOND}},
+{"fxvcmph",        FXV(4,  300), FXV_MASK, PPCS2PP, PPCNONE, {FXVRA                         }},
+{"fxvcmpb",        FXV(4,  301), FXV_MASK, PPCS2PP, PPCNONE, {FXVRA                         }},
+{"fxvshh",         FXV(4,  316), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVSH          }},
+{"fxvshb",         FXV(4,  317), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVSH          }},
+{"fxvsel",         FXV(4,  319), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvsubhm",       FXV(4,  332), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvsubbm",       FXV(4,  333), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvsubhfs",      FXV(4,  348), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvsubbfs",      FXV(4,  349), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvaddactachm",  FXV(4,  364), FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVCOND                }},
+{"fxvaddactach",   FXV(4,  364), FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVCOND                }},
+{"fxvaddactacb",   FXV(4,  365), FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVCOND                }},
+{"fxvaddactachf",  FXV(4,  380), FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVCOND                }},
+{"fxvaddactacbf",  FXV(4,  381), FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVCOND                }},
+{"fxvaddachm",     FXV(4,  396), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVCOND        }},
+{"fxvaddacbm",     FXV(4,  397), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVCOND        }},
+{"fxvaddachfs",    FXV(4,  412), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVCOND        }},
+{"fxvaddacbfs",    FXV(4,  413), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVCOND        }},
+{"fxvaddtachm",    FXV(4,  428), FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVRB,  FXVCOND        }},
+{"fxvaddtach",     FXV(4,  428), FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVRB,  FXVCOND        }},
+{"fxvaddtacb",     FXV(4,  429), FXV_MASK, PPCS2PP, PPCNONE, {FXVRA, FXVRB,  FXVCOND        }},
+{"fxvaddhm",       FXV(4,  460), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvaddbm",       FXV(4,  461), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvaddhfs",      FXV(4,  476), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvaddbfs",      FXV(4,  477), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, FXVRA,  FXVRB,  FXVCOND}},
+{"fxvlax",         FXV(4,  492), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, RA0,    RB,     FXVCOND}},
+{"fxvstax",        FXV(4,  508), FXV_MASK, PPCS2PP, PPCNONE, {FXVRT, RA0,    RB,     FXVCOND}},
+
 {"evfsctuiz",	VX (4, 664),	VX_MASK,     PPCSPE|PPCVLE, PPCNONE,	{RS, RB}},
 {"put",		APU(4, 332,0),	APU_RT_MASK, PPC405,	PPCNONE,	{RA, FSL}},
 {"evfsctsiz",	VX (4, 666),	VX_MASK,     PPCSPE|PPCVLE, PPCNONE,	{RS, RB}},

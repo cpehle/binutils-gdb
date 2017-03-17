@@ -204,6 +204,9 @@ extern const int vle_num_opcodes;
 /* Opcode is supported by ppc821/850/860.  */
 #define PPC_OPCODE_860	      0x10000000000ull
 
+/* s2pp: Opcode which is supported by the Human Brain Project's s2pp processor. */
+#define PPC_OPCODE_S2PP       PPC_OPCODE_PPC
+
 /* A macro to extract the major opcode from an instruction.  */
 #define PPC_OP(i) (((i) >> 26) & 0x3f)
 
@@ -390,10 +393,13 @@ extern const unsigned int num_powerpc_operands;
 /* This is a CR FIELD that does not use symbolic names.  */
 #define PPC_OPERAND_CR_REG (0x200000)
 
+/* s2pp: This is a fixed-point vector register. */
+#define PPC_OPERAND_FXV_REG (0x400000)
+
 /* This flag is only used with PPC_OPERAND_OPTIONAL.  If this operand
    is omitted, then the value it should use for the operand is stored
    in the SHIFT field of the immediatly following operand field.  */
-#define PPC_OPERAND_OPTIONAL_VALUE (0x400000)
+#define PPC_OPERAND_OPTIONAL_VALUE (0x800000)
 
 /* The POWER and PowerPC assemblers use a few macros.  We keep them
    with the operands table for simplicity.  The macro table is an
